@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Железо">
+<meta name="theme-color" content="#0a0a0b">
+<title>Железные тренировки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0b;
+  --bg2:#141417;
+  --card:#1a1a1f;
+  --card2:#222228;
+  --line:#2c2c34;
+  --txt:#f4f4f5;
+  --mut:#8a8a93;
+  --acc:#ff4d2e;
+  --acc2:#ffa600;
+  --ok:#34d27b;
+  --blue:#4d9fff;
+  --rad:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--txt);font-family:'Barlow',sans-serif;overscroll-behavior-y:none}
+body{padding:env(safe-area-inset-top) 0 calc(82px + env(safe-area-inset-bottom)) 0;min-height:100vh}
+h1,h2,h3,.disp{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.5px}
+
+/* Header */
+.hdr{position:sticky;top:0;z-index:30;background:linear-gradient(180deg,var(--bg) 70%,rgba(10,10,11,.0));padding:14px 18px 10px;backdrop-filter:blur(6px)}
+.hdr .row{display:flex;align-items:center;justify-content:space-between}
+.brand{font-family:'Oswald';font-weight:700;font-size:22px;letter-spacing:1px;display:flex;align-items:center;gap:9px}
+.brand .bar{width:5px;height:24px;background:var(--acc);border-radius:2px;box-shadow:0 0 12px var(--acc)}
+.sub{color:var(--mut);font-size:12.5px;margin-top:2px;font-weight:500}
+
+/* Screens */
+.screen{display:none;padding:6px 16px 20px;animation:fade .25s ease}
+.screen.on{display:block}
+/* на экране тренировки внизу висят кнопка «Сохранить» (~56px) над таббаром (70px) —
+   даём списку упражнений запас снизу, чтобы последнее упражнение прокручивалось выше них */
+#s-workout{padding-bottom:calc(250px + env(safe-area-inset-bottom))}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Day cards on home */
+.daygrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+.daycard{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);padding:16px 14px;position:relative;overflow:hidden;cursor:pointer;transition:transform .12s}
+.daycard:active{transform:scale(.97)}
+.daycard .tag{font-family:'Oswald';font-weight:600;font-size:13px;color:var(--acc);letter-spacing:1px}
+.daycard.low .tag{color:var(--acc2)}
+.daycard .nm{font-family:'Oswald';font-weight:700;font-size:21px;margin-top:4px}
+.daycard .ex{color:var(--mut);font-size:12.5px;margin-top:7px;line-height:1.45}
+.daycard .glow{position:absolute;right:-18px;top:-18px;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,var(--acc),transparent 70%);opacity:.16}
+.daycard.low .glow{background:radial-gradient(circle,var(--acc2),transparent 70%)}
+
+.section-t{font-family:'Oswald';font-weight:600;font-size:13px;color:var(--mut);letter-spacing:1.5px;margin:22px 4px 10px}
+
+/* Tips / volume */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);padding:15px 16px;margin-top:10px}
+.panel p{color:var(--mut);font-size:13.5px;line-height:1.55}
+.panel p strong{color:var(--txt);font-weight:600}
+.volbar{display:flex;align-items:center;gap:10px;margin:9px 0}
+.volbar .lbl{width:96px;font-size:12.5px;color:var(--txt);font-weight:500}
+.volbar .track{flex:1;height:9px;background:var(--bg2);border-radius:5px;overflow:hidden}
+.volbar .fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.volbar .v{width:30px;text-align:right;font-size:12.5px;color:var(--mut);font-family:'Oswald'}
+.zone{font-size:11.5px;color:var(--mut);margin-top:4px}
+
+/* Workout screen */
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-size:14px;font-weight:600;margin:2px 0 8px;cursor:pointer}
+.back-bottom{display:flex;align-items:center;justify-content:center;gap:6px;color:var(--mut);font-size:15px;font-weight:600;margin:18px 0 6px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--bg2);cursor:pointer}
+.back-bottom:active{transform:scale(.98)}
+.wtitle{font-family:'Oswald';font-weight:700;font-size:26px}
+.wmeta{color:var(--mut);font-size:12.5px;margin-top:2px}
+
+.ex-card{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);margin-top:12px;overflow:hidden}
+.ex-head{padding:13px 15px 11px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ex-name{font-family:'Oswald';font-weight:600;font-size:17px;line-height:1.15}
+.ex-target{color:var(--acc2);font-size:12px;font-weight:600;margin-top:3px;font-family:'Barlow'}
+.ex-last{text-align:right;font-size:11px;color:var(--mut);min-width:74px;line-height:1.35}
+.ex-last b{color:var(--blue);font-weight:600}
+.sets{padding:0 15px 13px}
+.set-row{display:grid;grid-template-columns:40px 1fr 1fr 34px;gap:8px;align-items:center;margin-top:8px}
+.set-row .sn{font-family:'Oswald';font-weight:600;color:var(--mut);font-size:14px;text-align:center}
+.inp{background:var(--bg2);border:1px solid var(--line);border-radius:11px;color:var(--txt);font-size:17px;font-family:'Barlow';font-weight:600;padding:11px 8px;text-align:center;width:100%;-moz-appearance:textfield}
+.inp::-webkit-outer-spin-button,.inp::-webkit-inner-spin-button{-webkit-appearance:none}
+.inp:focus{outline:none;border-color:var(--acc);background:#1d1512}
+.inp::placeholder{color:#55555e;font-weight:500}
+.set-row .chk{width:34px;height:34px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:transparent;transition:all .15s}
+.set-row .chk.done{background:var(--ok);border-color:var(--ok);color:#06210f}
+.col-h{display:grid;grid-template-columns:40px 1fr 1fr 34px;gap:8px;margin-top:4px;padding:0 0}
+.note-wrap{margin-top:11px}
+.note-inp{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:11px;color:var(--txt);font-size:14px;font-family:'Barlow';padding:10px 11px;resize:vertical;min-height:38px;line-height:1.4;box-sizing:border-box}
+.note-inp:focus{outline:none;border-color:var(--acc);background:#1d1512}
+.note-inp::placeholder{color:#55555e}
+.note-prev{font-size:11.5px;color:var(--mut);margin-top:6px;line-height:1.45;font-style:italic;padding:0 2px}
+.hist-note{font-size:12px;color:var(--mut);line-height:1.45;margin:2px 0 6px;padding:5px 9px;background:var(--bg2);border-radius:8px;border-left:2px solid var(--acc2)}
+/* Календарь месяца */
+.cal-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);padding:14px 13px 12px;margin-top:12px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-title{font-family:'Oswald';font-weight:600;font-size:17px;letter-spacing:.5px;cursor:pointer;color:var(--txt)}
+.cal-nav{background:var(--bg2);border:1px solid var(--line);color:var(--txt);font-size:18px;width:38px;height:38px;border-radius:11px;cursor:pointer;line-height:1}
+.cal-nav:active{transform:scale(.94);background:#1d1512}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-wd{margin-bottom:4px}
+.cal-wdc{text-align:center;font-size:10px;color:var(--mut);font-weight:600;text-transform:uppercase;padding:2px 0}
+.cal-cell{aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:9px;position:relative;background:var(--bg2);min-height:0}
+.cal-num{font-size:13px;color:var(--mut);font-weight:500}
+.cal-cell.has{cursor:pointer}
+.cal-cell.has .cal-num{color:var(--txt);font-weight:600}
+.cal-cell.today{outline:1.5px solid var(--mut)}
+.cal-dot{width:7px;height:7px;border-radius:50%}
+.cal-cell.up{background:rgba(255,77,46,.16)}
+.cal-cell.up .cal-dot{background:var(--acc)}
+.cal-cell.low{background:rgba(58,138,221,.16)}
+.cal-cell.low .cal-dot{background:var(--blue)}
+.cal-cell.both{background:linear-gradient(135deg,rgba(255,77,46,.16),rgba(58,138,221,.16))}
+.cal-cell.both .cal-dot{background:linear-gradient(90deg,var(--acc),var(--blue))}
+.cal-stat{display:flex;align-items:center;gap:14px;margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:12.5px;color:var(--mut)}
+.cal-stat b{color:var(--txt);font-size:15px;font-family:'Oswald'}
+.cal-lg{display:inline-flex;align-items:center;gap:5px}
+.cal-lg .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.cal-lg .dot.up{background:var(--acc)}
+.cal-lg .dot.low{background:var(--blue)}
+.hist-note-wrap{margin:2px 0 6px}
+.hn-edit{background:none;border:none;color:var(--blue);font-size:11px;font-weight:600;cursor:pointer;margin-left:6px;padding:0;white-space:nowrap}
+.hn-add{background:none;border:1px dashed var(--line);color:var(--mut);font-size:11.5px;cursor:pointer;padding:5px 10px;border-radius:8px;width:100%;text-align:left}
+.hn-add:active{background:var(--bg2)}
+.hn-editbox{background:var(--bg2);border-radius:10px;padding:8px;border-left:2px solid var(--acc2)}
+.hn-input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;font-family:'Barlow';padding:8px;resize:vertical;box-sizing:border-box;line-height:1.4}
+.hn-input:focus{outline:none;border-color:var(--acc)}
+.hn-actions{display:flex;gap:8px;margin-top:7px;justify-content:flex-end}
+.hn-cancel,.hn-save{font-size:12px;font-weight:600;padding:7px 14px;border-radius:9px;cursor:pointer;border:1px solid var(--line)}
+.hn-cancel{background:transparent;color:var(--mut)}
+.hn-save{background:var(--ok);color:#06210f;border-color:var(--ok)}
+.hn-save:active,.hn-cancel:active{transform:scale(.97)}
+.col-h span{font-size:10.5px;color:var(--mut);text-align:center;letter-spacing:.5px;font-weight:600;text-transform:uppercase}
+
+.savebar{position:fixed;left:0;right:0;bottom:calc(70px + env(safe-area-inset-bottom));padding:0 16px;z-index:25;display:none}
+.savebar.on{display:block}
+.savebtn{width:100%;background:linear-gradient(90deg,var(--acc),#ff6a3d);color:#fff;border:none;border-radius:14px;padding:16px;font-family:'Oswald';font-weight:700;font-size:16px;letter-spacing:1px;text-transform:uppercase;box-shadow:0 8px 24px rgba(255,77,46,.35);cursor:pointer}
+.savebtn:active{transform:scale(.98)}
+/* Таймер отдыха */
+.resttimer{position:fixed;left:0;right:0;bottom:calc(138px + env(safe-area-inset-bottom));margin:0 16px;z-index:35;background:linear-gradient(135deg,#16140f,#1c1813);border:1px solid var(--acc);border-radius:16px;padding:12px 14px 11px;box-shadow:0 10px 34px rgba(0,0,0,.5);display:none}
+.resttimer.on{display:block}
+.resttimer.done{border-color:var(--ok);animation:rtpulse .5s ease 3}
+@keyframes rtpulse{50%{box-shadow:0 0 0 4px rgba(52,210,123,.4),0 10px 34px rgba(0,0,0,.5)}}
+.rt-row{display:flex;align-items:center;gap:12px}
+.rt-adj{flex-shrink:0;background:var(--bg2);border:1px solid var(--line);color:var(--txt);font-family:'Oswald';font-weight:600;font-size:15px;padding:10px 13px;border-radius:11px;cursor:pointer;min-width:54px}
+.rt-adj:active{transform:scale(.95);background:#1d1512}
+.rt-mid{flex:1;text-align:center}
+.rt-time{font-family:'Oswald';font-weight:700;font-size:30px;line-height:1;color:var(--acc);letter-spacing:1px}
+.resttimer.done .rt-time{color:var(--ok)}
+.rt-lbl{font-size:11px;color:var(--mut);margin-top:3px;text-transform:uppercase;letter-spacing:1px}
+.rt-close{flex-shrink:0;background:transparent;border:none;color:var(--mut);font-size:18px;cursor:pointer;padding:4px 6px}
+.rt-bar{height:5px;background:var(--bg2);border-radius:4px;margin-top:10px;overflow:hidden}
+.rt-fill{height:100%;background:linear-gradient(90deg,var(--acc),#ff6a3d);width:100%;border-radius:4px;transition:width 1s linear}
+.resttimer.done .rt-fill{background:var(--ok)}
+
+/* History */
+.hist-ex{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);margin-top:12px;padding:14px 15px}
+.hist-ex h3{font-family:'Oswald';font-weight:600;font-size:16px;margin-bottom:6px}
+.hist-row{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}
+.hist-row .d{color:var(--mut)}
+.hist-row .s{color:var(--txt);font-weight:600;font-family:'Barlow';text-align:right}
+.trend{font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;margin-left:6px}
+.trend.up{background:rgba(52,210,123,.15);color:var(--ok)}
+.trend.flat{background:rgba(138,138,147,.15);color:var(--mut)}
+.empty{color:var(--mut);text-align:center;padding:50px 20px;font-size:14px;line-height:1.6}
+.empty .big{font-size:40px;margin-bottom:10px}
+.histsel{display:flex;gap:8px;overflow-x:auto;padding:4px 0 2px;-webkit-overflow-scrolling:touch}
+.histsel button{flex-shrink:0;background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 13px;border-radius:20px;font-size:12.5px;font-weight:600;font-family:'Barlow';cursor:pointer}
+.histsel button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+
+/* Toast */
+.toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:calc(140px + env(safe-area-inset-bottom));background:var(--ok);color:#06210f;padding:12px 22px;border-radius:30px;font-weight:700;font-size:14px;opacity:0;pointer-events:none;transition:all .3s;z-index:60;box-shadow:0 8px 30px rgba(52,210,123,.4)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Tab bar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(16,16,19,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;padding:8px 0 calc(8px + env(safe-area-inset-bottom))}
+.tabbar button{flex:1;background:none;border:none;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:600;font-family:'Barlow';cursor:pointer;padding:4px}
+.tabbar button .ic{font-size:20px;line-height:1}
+.tabbar button.on{color:var(--acc)}
+
+.note{font-size:11.5px;color:#55555e;text-align:center;margin-top:18px;line-height:1.5;padding:0 10px}
+.bkrow{display:flex;gap:10px}
+.bkbtn{flex:1;border:none;border-radius:12px;padding:14px 8px;font-family:'Oswald';font-weight:600;font-size:14px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer}
+.bkbtn.save{background:linear-gradient(90deg,var(--ok),#28b86a);color:#06210f}
+.bkbtn.load{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+.bkbtn:active{transform:scale(.97)}
+#bkinfo{color:var(--mut)}
+.timerbox{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--rad);padding:14px 14px;margin-top:12px;position:relative}
+.timerbox .tcol{text-align:center}
+.timerbox .tlbl{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.timerbox .tval{font-family:'Oswald';font-weight:600;font-size:18px;margin-top:3px}
+.timerbox .tval.big{font-size:30px;color:var(--acc2);font-variant-numeric:tabular-nums}
+.timerbox .tcol.main{border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.tbtn{grid-column:1/4;margin-top:12px;border:none;border-radius:12px;padding:13px;font-family:'Oswald';font-weight:700;font-size:15px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:linear-gradient(90deg,var(--ok),#28b86a);color:#06210f}
+.tbtn.running{background:linear-gradient(90deg,var(--acc),#ff6a3d);color:#fff}
+.tbtn:active{transform:scale(.98)}
+.ws-row{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.ws-row:first-of-type{border-top:none}
+.ws-day{font-family:'Oswald';font-weight:600;font-size:13px}
+.ws-date{color:var(--mut);font-size:11.5px}
+.ws-dur{font-family:'Oswald';font-weight:600;color:var(--acc2);font-variant-numeric:tabular-nums}
+.chart-card{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);margin-top:10px;padding:13px 14px 8px}
+.chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.chart-head h3{font-family:'Oswald';font-weight:600;font-size:15px}
+.chart-delta{font-family:'Oswald';font-weight:700;font-size:13px;padding:2px 9px;border-radius:8px}
+.chart-delta.up{background:rgba(52,210,123,.15);color:var(--ok)}
+.chart-delta.down{background:rgba(255,77,46,.15);color:var(--acc)}
+.chart-delta.flat{background:rgba(138,138,147,.15);color:var(--mut)}
+.chart-svg{width:100%;height:auto;display:block}
+.cgrid{stroke:var(--line);stroke-width:1}
+.cax{fill:var(--mut);font-size:9px;font-family:'Barlow'}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="row">
+    <div>
+      <div class="brand"><span class="bar"></span>ЖЕЛЕЗО</div>
+      <div class="sub" id="hdrsub">Верх / Низ · 4 дня · акцент икры</div>
+    </div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="screen on" id="s-home">
+  <div class="daygrid" id="daygrid"></div>
+
+  <div class="section-t">НЕДЕЛЬНЫЙ ОБЪЁМ (ПОДХОДОВ / МЫШЦА)</div>
+  <div class="panel" id="volpanel"></div>
+
+  <div class="section-t">ПРИНЦИПЫ</div>
+  <div class="panel">
+    <p style="margin-bottom:9px"><strong>Периодизация.</strong> Силовые дни (6–8 повт, ~80%) и объёмные (12 повт, ~65–70%) чередуются — так разгружается нервная система. Каждая группа получает оба стимула за неделю.</p>
+    <p style="margin-bottom:9px"><strong>Отказ с умом.</strong> В базовых (жим, присед) последний подход до технического отказа, 1–2 повтора в запасе. В изоляции (блок, пек-дек, икры) можно до полного отказа — это безопасно.</p>
+    <p style="margin-bottom:9px"><strong>Двойная прогрессия.</strong> Добрал верх диапазона во всех подходах → в следующий раз +2,5 кг и снова с низа диапазона.</p>
+    <p style="margin-bottom:9px"><strong>Икры — приоритет.</strong> 3 дня в неделю, стоя (икроножная) + сидя (камбаловидная). Полная амплитуда с паузами вверху и внизу, без пружинящей инерции.</p>
+    <p style="margin-bottom:9px"><strong>Дилоад на 12-й неделе.</strong> Веса −40%, подходы вдвое. После — новый цикл с чуть большими весами.</p>
+    <p><strong>База.</strong> Белок 1,8–2,2 г/кг и сон 7–8 ч — без этого роста не будет, особенно после 50.</p>
+  </div>
+  <div class="section-t">РЕЗЕРВНАЯ КОПИЯ (iCloud DRIVE)</div>
+  <div class="panel">
+    <p style="margin-bottom:12px">Сохрани копию данных в файл и положи его в <strong>Файлы → iCloud Drive</strong> — он синхронизируется на все твои устройства и не пропадёт при смене телефона.</p>
+    <div class="bkrow">
+      <button class="bkbtn save" onclick="exportBackup()">⬇︎ Сохранить копию</button>
+      <button class="bkbtn load" onclick="document.getElementById('importFile').click()">⬆︎ Загрузить копию</button>
+    </div>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importBackup(event)">
+    <p id="bkinfo" style="margin-top:11px;font-size:11.5px"></p>
+  </div>
+  <div class="note">Совет: нажми «Поделиться» в Safari → «На экран Домой», и приложение появится иконкой. Данные хранятся прямо на телефоне.</div>
+</div>
+
+<!-- WORKOUT -->
+<div class="screen" id="s-workout">
+  <div class="back" onclick="go('home')">‹ Назад</div>
+  <div class="wtitle" id="wtitle"></div>
+  <div class="wmeta" id="wmeta"></div>
+  <div class="timerbox" id="timerbox">
+    <div class="tcol">
+      <div class="tlbl">Начало</div>
+      <div class="tval" id="tStart">—</div>
+    </div>
+    <div class="tcol main">
+      <div class="tlbl">Длительность</div>
+      <div class="tval big" id="tDur">00:00</div>
+    </div>
+    <div class="tcol">
+      <div class="tlbl">Конец</div>
+      <div class="tval" id="tEnd">—</div>
+    </div>
+    <button class="tbtn" id="tBtn" onclick="toggleTimer()">Старт</button>
+  </div>
+  <div id="exlist"></div>
+  <div class="back-bottom" onclick="go('home')">‹ Назад к выбору дня</div>
+</div>
+
+<!-- HISTORY -->
+<div class="screen" id="s-history">
+  <div class="wtitle" style="font-size:24px;margin-top:4px">История</div>
+  <div class="wmeta">Прогрессия по упражнениям</div>
+  <div class="histsel" id="histsel"></div>
+  <div id="histbody"></div>
+</div>
+
+<audio id="beepAudio" preload="auto" src="data:audio/wav;base64,UklGRtIzAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0Ya4zAAAAACUAkQA2AfwByAJ7A/YDHgTeAyoDAwJyAI/+evxc+mL4vvaa9R31Y/V59l34/vo4/tsBqQVfCbUMZA8wEekRbhG2D8sM0Aj+A6D+Dfmn89Du5+o86A7nhOeq6W3tnfLv+AAAXAeHDv8UTxoMHugfsR9VHewYrxL5CkQCH/ki8OvnDuEM3ErZCdlg2zzgWudR8JX6fgVWEGIa8iJnKUUtOS4gLAonOx8oFW4JzvwX8CLkwtmv0YHMoMpAzFfRo9mo5LjxAACTDnwcySihMlE5VjxsO402+i0zIvATFwTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOf71usX3aDQQ8ecwQnApsJGyXvTmeDF7wAAOxBnH4UsujZaPfc/ZD69OGAv6SIqFBkExfM85ITWg8vxw03A08B7xffNudn859H3LwgEGEcmCTKFOi0/sz8PPH00fCnEGzsM5/vW6xfdoNBDx5zBCcCmwkbJe9OZ4MXvAAA7EGcfhSy6Nlo99z9kPr04YC/pIioUGQTF8zzkhNaDy/HDTcDTwHvF98252fzn0fcvCAQYRyYJMoU6LT+zPw88fTR8KcQbOwzn+9brF92g0EPHnMEJwKbCRsl705ngxe8AADsQZx+FLLo2Wj33P2Q+vThgL+kiKhQZBMXzPOSE1oPL8cNNwNPAe8X3zbnZ/OfR9y8IBBhHJgkyhTotP7M/Dzx9NHwpxBs7DOn7EOzN3QbSc8mUxKrDr8ZfzTfXhONt8QAASA5YG10mqS7AM2A1fzNRLj4m3hvpDzIDkvbY6sXg9tjg08fRu9KZ1g7dnuWq74L6awWvD6YYxB+gJPcmtib0I/IeFRjeD+EGvP0H9VHtFOer4k/gGOD04bHlAet58aT4AAARB2MNkxJWFnwY8hjEFxkVMBFZDPMGYAEC/DD3NfNK8JLuF+7Q7pzwS/Oh9lf6Jf7IAQIFoweHCZ0K4wpmCkIJngekBYYDcQGO//391vwi/OL7CvyF/Dj9BP7K/m//2/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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"></audio>
+<div class="resttimer" id="resttimer">
+  <div class="rt-row">
+    <button class="rt-adj" onclick="adjRest(-15)">−15</button>
+    <div class="rt-mid">
+      <div class="rt-time" id="rtTime">2:00</div>
+      <div class="rt-lbl" id="rtLbl">отдых</div>
+    </div>
+    <button class="rt-adj" onclick="adjRest(15)">+15</button>
+    <button class="rt-close" onclick="stopRest()" aria-label="закрыть">✕</button>
+  </div>
+  <div class="rt-bar"><div class="rt-fill" id="rtFill"></div></div>
+</div>
+
+<div class="savebar" id="savebar"><button class="savebtn" onclick="saveWorkout()">Сохранить тренировку</button></div>
+
+<div class="toast" id="toast">Сохранено ✓</div>
+
+<div class="tabbar">
+  <button class="on" id="t-home" onclick="go('home')"><span class="ic">🏋️</span>Тренировки</button>
+  <button id="t-history" onclick="go('history')"><span class="ic">📈</span>История</button>
+</div>
+
+<script>
+/* ---------- ПРОГРАММА ---------- */
+const PROGRAM = {
+  vA:{tag:"ВЕРХ · A",type:"up",name:"Верх A",meta:"Силовой · 6–8 повт · ~80%",ex:[
+    {n:"Пресс — подъёмы ног в висе на турнике",t:"2 × 10–15"},
+    {n:"Жим штанги лёжа горизонтально",t:"3 × 6–8"},
+    {n:"Подтягивания широким хватом с весом",t:"3 × 6–8"},
+    {n:"Тяга гантели в наклоне",t:"3 × 8–10"},
+    {n:"Жим в тренажёре на плечи сидя",t:"3 × 6–8"},
+    {n:"Разгибание рук на верхнем блоке (трицепс)",t:"3 × 10–12"},
+    {n:"Подъёмы на носки стоя (лёгкая работа)",t:"3 × 15"},
+  ]},
+  nA:{tag:"НИЗ · A",type:"low",name:"Низ A",meta:"Объёмный · 12 повт · ~65–70%",ex:[
+    {n:"Пресс — скручивания на полу",t:"2 × 15–20"},
+    {n:"Приседания в Смите / со штангой",t:"3 × 12"},
+    {n:"Сгибания ног лёжа",t:"3 × 12"},
+    {n:"Разгибания ног сидя",t:"3 × 12"},
+    {n:"Жим одной ногой (акцент ягодицы)",t:"3 × 12"},
+    {n:"Подъёмы на носки сидя (камбаловидная)",t:"4 × 15–20"},
+  ]},
+  vB:{tag:"ВЕРХ · Б",type:"up",name:"Верх Б",meta:"Объёмный · 12 повт · ~65–70%",ex:[
+    {n:"Пресс — скручивания на полу",t:"2 × 15–20"},
+    {n:"Наклонный жим в Смите 30° (верх груди)",t:"3 × 12"},
+    {n:"Тяга горизонтального блока к поясу",t:"3 × 12"},
+    {n:"Тяга верхнего блока к груди",t:"3 × 12"},
+    {n:"Пек-дек (сведение в тренажёре)",t:"3 × 12–15"},
+    {n:"Махи в тренажёре сидя (средние дельты)",t:"3 × 12–15"},
+    {n:"Сгибание рук на скамье Скотта / на блоке",t:"4 × 10–12"},
+  ]},
+  nB:{tag:"НИЗ · Б",type:"low",name:"Низ Б",meta:"Силовой · 6–8 повт · ~80%",ex:[
+    {n:"Пресс — подъёмы ног в висе на турнике",t:"2 × 10–15"},
+    {n:"Жим ногами в тренажёре",t:"3 × 6–8"},
+    {n:"Румынская тяга с гантелями / штангой",t:"3 × 6–8"},
+    {n:"Сгибания ног лёжа",t:"3 × 6–8"},
+    {n:"Жим ногами одной (акцент ягодицы)",t:"3 × 6–8"},
+    {n:"Подъёмы на носки стоя (Смит / гантели)",t:"4 × 12–15"},
+  ]},
+};
+const ORDER=["vA","nA","vB","nB"];
+
+/* ---------- СОВМЕСТИМОСТЬ СО СТАРЫМИ НАЗВАНИЯМИ ----------
+   Ключ — новое название упражнения, значение — список старых
+   названий, чьи записи должны подтянуться к нему как история. */
+const ALIASES = {
+  "Жим штанги лёжа горизонтально":["Жим лёжа (или жим от груди в тренажёре)"],
+  "Наклонный жим в Смите 30° (верх груди)":["Жим на наклонной скамье (штанга/гантели)","Жим гантелей под углом 30° (верх груди)"],
+  "Пек-дек (сведение в тренажёре)":["Сведения в Пэк-Дэк (грудь)"],
+  "Тяга горизонтального блока к поясу":["Тяга горизонтального блока"],
+  "Тяга верхнего блока к груди":["Тяга верхнего блока к груди"],
+  "Тяга гантели в наклоне":["Тяга гантели в наклоне"],
+  "Махи в тренажёре сидя (средние дельты)":["Махи в тренажёре (плечи)"],
+  "Разгибание рук на верхнем блоке (трицепс)":["Разгибания на трицепс на блоке"],
+  "Разгибание рук на блоке (трицепс)":["Разгибания на трицепс на блоке"],
+  "Сгибание рук с гантелями стоя (супинация)":["Сгибания рук с гантелями"],
+  "Сгибание рук на скамье Скотта / на блоке":["Сгибания рук со штангой"],
+  "Приседания в Смите / со штангой":["Присед штанга (RIR 2)"],
+  "Румынская тяга с гантелями / штангой":["Румынская тяга (умеренный вес, спина прямая)"],
+  "Жим ногами в тренажёре":["Жим ногами в тренажёре"],
+  "Сгибания ног лёжа":["Сгибания ног в тренажёре"],
+  "Разгибания ног сидя":["Разгибания ног в тренажёре"],
+  "Подъёмы на носки сидя (камбаловидная)":["Подъёмы на носки сидя"],
+  "Подъёмы на носки стоя (Смит / гантели)":["Подъёмы на носки стоя"],
+  "Подъёмы на носки стоя (лёгкая работа)":["Подъёмы на носки стоя"],
+  "Пресс — скручивания на полу":["Пресс — скручивания в тренажёре","Пресс — скручивания (без бедра)","Пресс — скручивания","Скручивания","Пресс"],
+  "Пресс — подъёмы ног в висе на турнике":["Подъёмы ног в висе","Пресс — подъёмы ног"],
+};
+/* возвращает все названия (новое + старые синонимы) для поиска истории */
+function exAliases(newName){
+  return [newName].concat(ALIASES[newName]||[]);
+}
+
+const VOLUME=[
+  {m:"Грудь",v:9},{m:"Спина",v:12},
+  {m:"Ср. дельты",v:6},
+  {m:"Квадрицепс",v:9},{m:"Бицепс бедра",v:9},{m:"Ягодицы",v:6},
+  {m:"Бицепс",v:4},{m:"Трицепс",v:3},{m:"Икры",v:11},
+];
+
+/* ---------- ХРАНИЛИЩЕ (история сохраняется на телефоне) ---------- */
+const KEY="zhelezo_history_v1";
+function loadHist(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+function saveHist(h){try{localStorage.setItem(KEY,JSON.stringify(h))}catch(e){alert("Не удалось сохранить. Возможно, режим приватного просмотра в Safari — отключи его.")}}
+let HIST=loadHist();
+
+/* ---------- РЕЗЕРВНАЯ КОПИЯ ---------- */
+function exportBackup(){
+  if(HIST.length===0){toast('Пока нет данных для копии',true);return;}
+  const payload={app:"zhelezo",version:1,exported:new Date().toISOString(),history:HIST};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const now=new Date();
+  const stamp=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const a=document.createElement('a');
+  a.href=url;a.download='zhelezo-backup-'+stamp+'.json';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},100);
+  document.getElementById('bkinfo').textContent='Копия создана ('+HIST.length+' трен.). В меню сохранения выбери «Сохранить в Файлы» → iCloud Drive.';
+  toast('Копия создана ✓');
+}
+function importBackup(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      const incoming=Array.isArray(data)?data:data.history;
+      if(!Array.isArray(incoming))throw new Error('format');
+      // объединяем с текущими по метке времени, без дублей
+      const map={};
+      [...HIST,...incoming].forEach(rec=>{
+        if(rec&&rec.ts)map[rec.ts]=rec;
+      });
+      HIST=Object.values(map).sort((a,b)=>a.ts-b.ts);
+      saveHist(HIST);
+      renderHome();
+      document.getElementById('bkinfo').textContent='Загружено. Всего тренировок: '+HIST.length+'.';
+      toast('Данные восстановлены ✓');
+    }catch(err){
+      toast('Не удалось прочитать файл',true);
+    }
+    ev.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- НАВИГАЦИЯ ---------- */
+let currentDay=null;
+
+/* ---------- ТАЙМЕР ТРЕНИРОВКИ ---------- */
+let tStartTs=null,tEndTs=null,tInterval=null;
+function fmtClock(ts){return new Date(ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});}
+function fmtDur(ms){
+  const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  const mm=String(h>0?m:m).padStart(2,'0'),ss=String(sec).padStart(2,'0');
+  return h>0?`${h}:${mm}:${ss}`:`${mm}:${ss}`;
+}
+function resetTimer(){
+  tStartTs=null;tEndTs=null;if(tInterval){clearInterval(tInterval);tInterval=null;}
+  document.getElementById('tStart').textContent='—';
+  document.getElementById('tEnd').textContent='—';
+  document.getElementById('tDur').textContent='00:00';
+  const b=document.getElementById('tBtn');b.textContent='Старт';b.classList.remove('running');
+}
+function tick(){
+  const end=tEndTs||Date.now();
+  document.getElementById('tDur').textContent=fmtDur(end-tStartTs);
+}
+function toggleTimer(){
+  const b=document.getElementById('tBtn');
+  if(!tStartTs){ // старт
+    tStartTs=Date.now();tEndTs=null;
+    document.getElementById('tStart').textContent=fmtClock(tStartTs);
+    document.getElementById('tEnd').textContent='—';
+    b.textContent='Финиш';b.classList.add('running');
+    tick();tInterval=setInterval(tick,1000);
+  }else if(!tEndTs){ // финиш
+    tEndTs=Date.now();if(tInterval){clearInterval(tInterval);tInterval=null;}
+    document.getElementById('tEnd').textContent=fmtClock(tEndTs);
+    tick();
+    b.textContent='Сброс';b.classList.remove('running');
+  }else{ // сброс
+    resetTimer();
+  }
+}
+function go(scr){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById('s-'+scr).classList.add('on');
+  document.getElementById('t-home').classList.toggle('on',scr!=='history');
+  document.getElementById('t-history').classList.toggle('on',scr==='history');
+  document.getElementById('savebar').classList.toggle('on',scr==='workout');
+  if(scr==='history')renderHistory();
+  if(scr!=='workout')stopRest();
+  window.scrollTo(0,0);
+}
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  const g=document.getElementById('daygrid');g.innerHTML='';
+  ORDER.forEach(k=>{
+    const d=PROGRAM[k];
+    const el=document.createElement('div');
+    el.className='daycard'+(d.type==='low'?' low':'');
+    el.onclick=()=>openWorkout(k);
+    el.innerHTML=`<div class="glow"></div><div class="tag">${d.tag}</div>
+      <div class="nm">${d.name}</div>
+      <div class="ex">${d.ex.length} упр. · ${d.ex.map(e=>e.n.split(' ')[0]).slice(0,3).join(', ')}…</div>`;
+    g.appendChild(el);
+  });
+  // volume
+  const vp=document.getElementById('volpanel');vp.innerHTML='';
+  VOLUME.forEach(x=>{
+    const pct=Math.min(100,(x.v/20)*100);
+    const row=document.createElement('div');row.className='volbar';
+    row.innerHTML=`<div class="lbl">${x.m}</div><div class="track"><div class="fill" style="width:${pct}%"></div></div><div class="v">${x.v}</div>`;
+    vp.appendChild(row);
+  });
+  const z=document.createElement('div');z.className='zone';
+  z.textContent='Оптимальная зона роста: 10–20 подходов/нед. Для 50+ держим нижне-среднюю границу — это максимум, который реально восстановить.';
+  vp.appendChild(z);
+}
+
+/* ---------- WORKOUT ---------- */
+function lastSession(dayKey,exName){
+  const names=exAliases(exName);
+  for(let i=HIST.length-1;i>=0;i--){
+    if(HIST[i].day===dayKey){
+      const ex=HIST[i].ex.find(e=>names.indexOf(e.n)>-1);
+      if(ex&&ex.sets.some(s=>s.w||s.r))return{date:HIST[i].date,sets:ex.sets,note:ex.note||''};
+    }
+  }
+  return null;
+}
+function openWorkout(k){
+  currentDay=k;const d=PROGRAM[k];
+  document.getElementById('wtitle').textContent=d.name;
+  document.getElementById('wmeta').textContent=(d.meta?d.meta+' · ':'')+'впиши вес и повторы, отметь ✓';
+  const list=document.getElementById('exlist');list.innerHTML='';
+  d.ex.forEach((e,ei)=>{
+    const nSets=parseInt(e.t)||3;
+    const last=lastSession(k,e.n);
+    let lastHtml='—';
+    if(last){
+      const best=last.sets.filter(s=>s.w).map(s=>`${s.w}×${s.r}`).slice(0,3).join(' / ');
+      lastHtml=`<b>${best||'—'}</b><br><span style="font-size:10px">${last.date}</span>`;
+    }
+    const lastNote=last&&last.note?last.note:'';
+    const card=document.createElement('div');card.className='ex-card';
+    let setsHtml=`<div class="col-h"><span>#</span><span>Вес, кг</span><span>Повт.</span><span>✓</span></div>`;
+    for(let s=0;s<nSets;s++){
+      const pw=last&&last.sets[s]?last.sets[s].w:'';
+      setsHtml+=`<div class="set-row">
+        <div class="sn">${s+1}</div>
+        <input class="inp" inputmode="decimal" data-e="${ei}" data-s="${s}" data-f="w" placeholder="${pw||'0'}">
+        <input class="inp" inputmode="numeric" data-e="${ei}" data-s="${s}" data-f="r" placeholder="0">
+        <div class="chk" data-e="${ei}" data-s="${s}" onclick="onCheck(this)"></div>
+      </div>`;
+    }
+    const lastNoteHtml=lastNote?`<div class="note-prev">📝 прошлый раз: «${lastNote.replace(/</g,'&lt;')}»</div>`:'';
+    setsHtml+=`<div class="note-wrap">
+        <textarea class="note-inp" data-e="${ei}" rows="1" placeholder="Ощущения: как шло, что болело, что поправить…"></textarea>
+        ${lastNoteHtml}
+      </div>`;
+    card.innerHTML=`<div class="ex-head">
+        <div><div class="ex-name">${e.n}</div><div class="ex-target">Цель: ${e.t}</div></div>
+        <div class="ex-last">${lastHtml}</div>
+      </div><div class="sets">${setsHtml}</div>`;
+    list.appendChild(card);
+  });
+  resetTimer();
+  go('workout');
+}
+
+/* ---------- ТАЙМЕР ОТДЫХА МЕЖДУ ПОДХОДАМИ ---------- */
+const REST_KEY='zhelezo_rest_sec';
+let restSec=parseInt(localStorage.getItem(REST_KEY))||120;
+let restLeft=0,restTotal=0,restInt=null,restDone=false;
+
+function fmtRest(s){const m=Math.floor(s/60),ss=s%60;return m+':'+String(ss).padStart(2,'0');}
+function paintRest(){
+  document.getElementById('rtTime').textContent=fmtRest(Math.max(0,restLeft));
+  const pct=restTotal>0?Math.max(0,restLeft)/restTotal*100:0;
+  document.getElementById('rtFill').style.width=pct+'%';
+}
+// нажатие галочки: отметка + (если отмечено) запуск отдыха
+function onCheck(el){
+  el.classList.toggle('done');
+  const on=el.classList.contains('done');
+  el.textContent=on?'✓':'';
+  if(on)startRest();
+}
+// считаем по реальному времени: храним момент, когда отдых должен закончиться
+let restEndTs=0;
+function recompute(){
+  // сколько секунд осталось до конца, исходя из реальных часов
+  restLeft=Math.round((restEndTs-Date.now())/1000);
+  if(restLeft<=0){
+    restLeft=0;
+    paintRest();
+    if(!restDone){clearInterval(restInt);restInt=null;restFinished();}
+  }else{
+    paintRest();
+  }
+}
+function startRest(){
+  const rt=document.getElementById('resttimer');
+  restTotal=restSec;restLeft=restSec;restDone=false;
+  restEndTs=Date.now()+restSec*1000;
+  rt.classList.remove('done');rt.classList.add('on');
+  document.getElementById('rtLbl').textContent='отдых';
+  // «разбудим» звук на iOS — первый тап по галочке даёт право на звук
+  primeAudio();
+  paintRest();
+  clearInterval(restInt);
+  restInt=setInterval(recompute,500);
+}
+function stopRest(){
+  clearInterval(restInt);restInt=null;restDone=false;
+  document.getElementById('resttimer').classList.remove('on','done');
+}
+function adjRest(delta){
+  restSec=Math.max(15,restSec+delta);
+  localStorage.setItem(REST_KEY,restSec);
+  if(restInt){
+    restEndTs=Math.max(Date.now()+1000,restEndTs+delta*1000);
+    restTotal=Math.max(restTotal+delta,Math.round((restEndTs-Date.now())/1000));
+    recompute();
+  }else{
+    restTotal=restSec;restLeft=restSec;
+    paintRest();
+  }
+}
+function restFinished(){
+  restDone=true;
+  const rt=document.getElementById('resttimer');
+  rt.classList.add('done');
+  document.getElementById('rtTime').textContent='Готово';
+  document.getElementById('rtLbl').textContent='следующий подход';
+  document.getElementById('rtFill').style.width='100%';
+  beep();vibrate();
+  setTimeout(()=>{if(restDone)rt.classList.remove('on','done');},6000);
+}
+// при возврате на страницу (разблокировка/переключение) — пересчитать время
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden && restInt){recompute();}
+});
+window.addEventListener('focus',()=>{if(restInt)recompute();});
+// звук через WebAudio (без файлов)
+let _actx=null;
+function vibrate(){try{if(navigator.vibrate)navigator.vibrate([200,100,200]);}catch(e){}}
+// «разогрев» аудио в момент пользовательского тапа — обязательно для iOS
+let _audioReady=false;
+function primeAudio(){
+  try{
+    _actx=_actx||new (window.AudioContext||window.webkitAudioContext)();
+    if(_actx.state==='suspended')_actx.resume();
+    // реально проигрываем очень тихий короткий тон в обработчике касания —
+    // это разблокирует аудио на iOS на всю сессию
+    const o=_actx.createOscillator(),g=_actx.createGain();
+    g.gain.value=0.02;o.frequency.value=440;
+    o.connect(g);g.connect(_actx.destination);
+    const t=_actx.currentTime;
+    o.start(t);o.stop(t+0.05);
+    _audioReady=true;
+  }catch(e){}
+  // прогрев запасного HTML5 Audio: проигрываем и тут же ставим на паузу
+  try{
+    const a=document.getElementById('beepAudio');
+    if(a&&!a._primed){
+      a.muted=true;
+      a.play().then(()=>{a.pause();a.currentTime=0;a.muted=false;a._primed=true;}).catch(()=>{a.muted=false;});
+    }
+  }catch(e){}
+}
+function playTones(){
+  try{
+    if(!_actx)_actx=new (window.AudioContext||window.webkitAudioContext)();
+  }catch(e){return false;}
+  if(!_actx)return false;
+  try{
+    const go=()=>{
+      const t0=_actx.currentTime+0.02;
+      [0,0.22,0.44].forEach(off=>{
+        const o=_actx.createOscillator(),g=_actx.createGain();
+        o.type='square';o.frequency.value=900;
+        o.connect(g);g.connect(_actx.destination);
+        // линейные рампы — iOS их переваривает надёжнее экспоненциальных
+        g.gain.setValueAtTime(0,t0+off);
+        g.gain.linearRampToValueAtTime(0.5,t0+off+0.03);
+        g.gain.linearRampToValueAtTime(0.5,t0+off+0.13);
+        g.gain.linearRampToValueAtTime(0,t0+off+0.18);
+        o.start(t0+off);o.stop(t0+off+0.2);
+      });
+    };
+    if(_actx.state==='suspended'){_actx.resume().then(go).catch(()=>{});}
+    else{go();}
+    return true;
+  }catch(e){return false;}
+}
+function beep(){
+  // основной путь — WebAudio; если не вышло, запасной через HTML5 Audio
+  if(!playTones()){
+    try{
+      const a=document.getElementById('beepAudio');
+      if(a){a.currentTime=0;a.play().catch(()=>{});}
+    }catch(e){}
+  }
+}
+
+function saveWorkout(){
+  const d=PROGRAM[currentDay];
+  const exData=d.ex.map((e,ei)=>{
+    const nSets=parseInt(e.t)||3;const sets=[];
+    for(let s=0;s<nSets;s++){
+      const w=document.querySelector(`input[data-e="${ei}"][data-s="${s}"][data-f="w"]`).value;
+      const r=document.querySelector(`input[data-e="${ei}"][data-s="${s}"][data-f="r"]`).value;
+      sets.push({w:w||'',r:r||''});
+    }
+    const noteEl=document.querySelector(`textarea[data-e="${ei}"]`);
+    const note=noteEl?noteEl.value.trim():'';
+    return{n:e.n,sets,note};
+  });
+  const has=exData.some(e=>e.sets.some(s=>s.w||s.r));
+  if(!has){toast('Сначала впиши результаты',true);return;}
+  const now=new Date();
+  const date=now.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  const rec={day:currentDay,dayName:d.name,date,ts:now.getTime(),ex:exData};
+  if(tStartTs){
+    rec.start=fmtClock(tStartTs);
+    rec.end=tEndTs?fmtClock(tEndTs):'';
+    rec.durMs=(tEndTs||Date.now())-tStartTs;
+  }
+  HIST.push(rec);
+  saveHist(HIST);
+  toast('Тренировка сохранена ✓');
+  setTimeout(()=>go('home'),700);
+}
+
+/* ---------- HISTORY ---------- */
+let histFilter='all';
+function miniChart(title,pts){
+  const W=320,H=130,padL=34,padR=12,padT=14,padB=24;
+  const ws=pts.map(p=>p.w);
+  let min=Math.min(...ws),max=Math.max(...ws);
+  if(min===max){min=min-2.5;max=max+2.5;} // плоская линия — раздвинем шкалу
+  const rng=max-min;
+  const ix=W-padL-padR, iy=H-padT-padB;
+  const X=i=>padL+(pts.length===1?ix/2:ix*i/(pts.length-1));
+  const Y=w=>padT+iy-((w-min)/rng)*iy;
+  // линия
+  let path='';
+  pts.forEach((p,i)=>{path+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.w).toFixed(1)+' ';});
+  // точки
+  let dots='';
+  pts.forEach((p,i)=>{dots+=`<circle cx="${X(i).toFixed(1)}" cy="${Y(p.w).toFixed(1)}" r="3.2" fill="var(--acc2)"/>`;});
+  // подписи оси Y (мин/макс)
+  const yMax=`<text x="4" y="${(padT+6).toFixed(0)}" class="cax">${max}</text>`;
+  const yMin=`<text x="4" y="${(padT+iy+4).toFixed(0)}" class="cax">${min}</text>`;
+  // подписи дат (первая и последняя)
+  const xFirst=`<text x="${padL}" y="${H-6}" class="cax" text-anchor="start">${pts[0].date}</text>`;
+  const xLast=`<text x="${W-padR}" y="${H-6}" class="cax" text-anchor="end">${pts[pts.length-1].date}</text>`;
+  // дельта
+  const delta=pts[pts.length-1].w-pts[0].w;
+  const dStr=(delta>0?'+':'')+delta+' кг';
+  const dCls=delta>0?'up':(delta<0?'down':'flat');
+  return `<div class="chart-card">
+    <div class="chart-head"><h3>${title}</h3><span class="chart-delta ${dCls}">${dStr}</span></div>
+    <svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="xMidYMid meet">
+      <line x1="${padL}" y1="${padT+iy}" x2="${W-padR}" y2="${padT+iy}" class="cgrid"/>
+      <path d="${path}" fill="none" stroke="var(--acc)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}${yMax}${yMin}${xFirst}${xLast}
+    </svg>
+  </div>`;
+}
+/* ---------- КАЛЕНДАРЬ МЕСЯЦА ---------- */
+let calRef=null; // {y, m} текущий показываемый месяц; null = текущий
+function calShift(delta){
+  const base=calRef?new Date(calRef.y,calRef.m,1):new Date();
+  base.setMonth(base.getMonth()+delta);
+  calRef={y:base.getFullYear(),m:base.getMonth()};
+  renderHistory();
+}
+function calToday(){calRef=null;renderHistory();}
+function renderCalendar(){
+  const now=new Date();
+  const y=calRef?calRef.y:now.getFullYear();
+  const m=calRef?calRef.m:now.getMonth();
+  const MONTHS=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const WD=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  // карта: число месяца -> массив тренировок этого дня
+  const byDay={};
+  HIST.forEach(h=>{
+    const d=new Date(h.ts);
+    if(d.getFullYear()===y && d.getMonth()===m){
+      const day=d.getDate();
+      (byDay[day]=byDay[day]||[]).push(h);
+    }
+  });
+  // первый день месяца -> смещение (Пн=0)
+  const first=new Date(y,m,1);
+  let startOffset=(first.getDay()+6)%7; // getDay: 0=вс
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const todayD=(now.getFullYear()===y&&now.getMonth()===m)?now.getDate():-1;
+
+  let cells='';
+  for(let d=1;d<=daysInMonth;d++){
+    const recs=byDay[d];
+    let cls='cal-cell',inner=`<span class="cal-num">${d}</span>`;
+    // первое число сдвигаем в нужную колонку, без пустых ячеек
+    const style=d===1?` style="grid-column-start:${startOffset+1}"`:'';
+    if(d===todayD)cls+=' today';
+    if(recs&&recs.length){
+      const hasUp=recs.some(r=>r.day&&r.day[0]==='v');
+      const hasLow=recs.some(r=>r.day&&r.day[0]==='n');
+      let dotCls='both';
+      if(hasUp&&!hasLow)dotCls='up';
+      else if(hasLow&&!hasUp)dotCls='low';
+      cls+=' has '+dotCls;
+      const names=recs.map(r=>r.dayName||'').join(', ');
+      inner+=`<span class="cal-dot"></span>`;
+      cells+=`<div class="${cls}"${style} onclick="toast('${d}.${String(m+1).padStart(2,'0')}: ${names.replace(/'/g,'')}')">${inner}</div>`;
+    }else{
+      cells+=`<div class="${cls}"${style}>${inner}</div>`;
+    }
+  }
+  // статистика месяца
+  const total=Object.values(byDay).reduce((a,arr)=>a+arr.length,0);
+  const upCount=Object.values(byDay).flat().filter(r=>r.day&&r.day[0]==='v').length;
+  const lowCount=Object.values(byDay).flat().filter(r=>r.day&&r.day[0]==='n').length;
+
+  return `<div class="cal-wrap">
+    <div class="cal-head">
+      <button class="cal-nav" onclick="calShift(-1)">‹</button>
+      <div class="cal-title" onclick="calToday()">${MONTHS[m]} ${y}</div>
+      <button class="cal-nav" onclick="calShift(1)">›</button>
+    </div>
+    <div class="cal-grid cal-wd">${WD.map(w=>`<div class="cal-wdc">${w}</div>`).join('')}</div>
+    <div class="cal-grid">${cells}</div>
+    <div class="cal-stat">
+      <span><b>${total}</b> трен.</span>
+      <span class="cal-lg"><i class="dot up"></i>Верх ${upCount}</span>
+      <span class="cal-lg"><i class="dot low"></i>Низ ${lowCount}</span>
+    </div>
+  </div>`;
+}
+function renderHistory(){
+  const sel=document.getElementById('histsel');sel.innerHTML='';
+  [['all','Все'],['vA','Верх A'],['nA','Низ A'],['vB','Верх Б'],['nB','Низ Б']].forEach(([k,l])=>{
+    const b=document.createElement('button');b.textContent=l;
+    if(k===histFilter)b.classList.add('on');
+    b.onclick=()=>{histFilter=k;renderHistory()};
+    sel.appendChild(b);
+  });
+  const body=document.getElementById('histbody');body.innerHTML='';
+  let data=HIST.slice();
+  if(histFilter!=='all')data=data.filter(h=>h.day===histFilter);
+  if(data.length===0){
+    body.innerHTML=`<div class="empty"><div class="big">📊</div>Пока нет записей.<br>Открой тренировку, впиши вес и повторы и сохрани — здесь появится твоя история и прогресс.</div>`;
+    return;
+  }
+  // сводка тренировок (дата + длительность)
+  const sessionsList=data.slice().sort((a,b)=>b.ts-a.ts);
+  let sumHtml='';
+  sessionsList.forEach(h=>{
+    const dur=h.durMs?fmtDur(h.durMs):null;
+    const time=h.start?`${h.start}${h.end?'–'+h.end:''}`:'';
+    sumHtml+=`<div class="ws-row">
+      <span class="ws-day">${h.dayName||''}</span>
+      <span class="ws-date">${h.date}${time?' · '+time:''}</span>
+      <span class="ws-dur">${dur?'⏱ '+dur:'—'}</span>
+    </div>`;
+  });
+  body.innerHTML=renderCalendar()+`<div class="hist-ex"><h3>Тренировки</h3>${sumHtml}</div>`;
+
+  // --- ГРАФИКИ ПРОГРЕССА по ключевым упражнениям ---
+  const KEY_LIFTS=[
+    {title:"Жим штанги лёжа",match:exAliases("Жим штанги лёжа горизонтально")},
+    {title:"Приседания",match:exAliases("Приседания в Смите / со штангой")},
+    {title:"Румынская тяга",match:exAliases("Румынская тяга с гантелями / штангой")},
+    {title:"Жим ногами",match:exAliases("Жим ногами в тренажёре")},
+  ];
+  let chartsHtml='';
+  KEY_LIFTS.forEach(lift=>{
+    const pts=[];
+    HIST.slice().sort((a,b)=>a.ts-b.ts).forEach(h=>{
+      const ex=h.ex.find(e=>lift.match.indexOf(e.n)>-1);
+      if(!ex)return;
+      const ws=ex.sets.map(s=>parseFloat(s.w)).filter(x=>!isNaN(x)&&x>0);
+      if(!ws.length)return;
+      pts.push({ts:h.ts,date:h.date,w:Math.max(...ws)});
+    });
+    if(pts.length>=2){
+      chartsHtml+=miniChart(lift.title,pts);
+    }
+  });
+  if(chartsHtml){
+    body.innerHTML+=`<div class="section-t" style="margin:22px 4px 4px">ГРАФИК ПРОГРЕССА (РАБОЧИЙ ВЕС)</div>`+chartsHtml;
+  }
+
+  // group by exercise name (старые названия сводим к новым через ALIASES)
+  const OLD2NEW={};
+  Object.keys(ALIASES).forEach(newName=>{
+    (ALIASES[newName]||[]).forEach(old=>{OLD2NEW[old]=newName;});
+  });
+  const canonical=n=>OLD2NEW[n]||n;
+  const byEx={};
+  data.forEach(h=>h.ex.forEach(e=>{
+    const filled=e.sets.filter(s=>s.w||s.r);
+    if(!filled.length)return;
+    const key=canonical(e.n);
+    (byEx[key]=byEx[key]||[]).push({date:h.date,ts:h.ts,sets:filled,note:e.note||'',origName:e.n});
+  }));
+  const names=Object.keys(byEx);
+  if(names.length===0){return;}
+  names.forEach(n=>{
+    const sessions=byEx[n].sort((a,b)=>b.ts-a.ts);
+    const card=document.createElement('div');card.className='hist-ex';
+    let rows='';
+    sessions.forEach((ss,i)=>{
+      const summary=ss.sets.map(s=>`${s.w||'–'}×${s.r||'–'}`).join('  ');
+      // trend: compare top weight to previous session
+      let trend='';
+      if(i<sessions.length-1){
+        const cur=Math.max(...ss.sets.map(s=>parseFloat(s.w)||0));
+        const prev=Math.max(...sessions[i+1].sets.map(s=>parseFloat(s.w)||0));
+        if(cur>prev)trend='<span class="trend up">↑</span>';
+        else if(cur===prev)trend='<span class="trend flat">=</span>';
+      }
+      rows+=`<div class="hist-row"><span class="d">${ss.date}</span><span class="s">${summary}${trend}</span></div>`;
+      const safeNote=ss.note.replace(/</g,'&lt;');
+      rows+=`<div class="hist-note-wrap" data-ts="${ss.ts}" data-ex="${encodeURIComponent(ss.origName)}">`;
+      if(ss.note){
+        rows+=`<div class="hist-note">📝 <span class="hn-text">${safeNote}</span>
+          <button class="hn-edit" onclick="editNote(this)">изменить</button></div>`;
+      }else{
+        rows+=`<button class="hn-add" onclick="editNote(this)">+ добавить заметку</button>`;
+      }
+      rows+=`</div>`;
+    });
+    card.innerHTML=`<h3>${n}</h3>${rows}`;
+    body.appendChild(card);
+  });
+}
+
+/* ---------- РЕДАКТИРОВАНИЕ ЗАМЕТКИ ЗАДНИМ ЧИСЛОМ ---------- */
+function editNote(btn){
+  const wrap=btn.closest('.hist-note-wrap');
+  const ts=parseInt(wrap.getAttribute('data-ts'));
+  const exName=decodeURIComponent(wrap.getAttribute('data-ex'));
+  // текущее значение заметки из HIST
+  const rec=HIST.find(h=>h.ts===ts);
+  const ex=rec?rec.ex.find(e=>e.n===exName):null;
+  const cur=ex&&ex.note?ex.note:'';
+  wrap.innerHTML=`<div class="hn-editbox">
+      <textarea class="hn-input" rows="2" placeholder="Опиши ощущения…">${cur.replace(/</g,'&lt;')}</textarea>
+      <div class="hn-actions">
+        <button class="hn-cancel" onclick="renderHistory()">Отмена</button>
+        <button class="hn-save" onclick="saveNote(this,${ts},'${encodeURIComponent(exName)}')">Сохранить</button>
+      </div>
+    </div>`;
+  const ta=wrap.querySelector('.hn-input');
+  ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
+}
+function saveNote(btn,ts,exEnc){
+  const exName=decodeURIComponent(exEnc);
+  const val=btn.closest('.hn-editbox').querySelector('.hn-input').value.trim();
+  const rec=HIST.find(h=>h.ts===ts);
+  if(!rec){toast('Запись не найдена',true);return;}
+  const ex=rec.ex.find(e=>e.n===exName);
+  if(!ex){toast('Упражнение не найдено',true);return;}
+  ex.note=val;
+  saveHist(HIST);
+  toast('Заметка сохранена');
+  renderHistory();
+}
+
+/* ---------- TOAST ---------- */
+let toastT;
+function toast(msg,warn){
+  const t=document.getElementById('toast');t.textContent=msg;
+  t.style.background=warn?'var(--acc2)':'var(--ok)';
+  t.style.color=warn?'#231400':'#06210f';
+  t.classList.add('show');clearTimeout(toastT);
+  toastT=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+// первое касание экрана разблокирует аудио на iOS (один раз)
+document.addEventListener('touchend',function _au(){primeAudio();document.removeEventListener('touchend',_au);},{once:true});
+document.addEventListener('click',function _au2(){primeAudio();document.removeEventListener('click',_au2);},{once:true});
+
+renderHome();
+</script>
+</body>
+</html>
